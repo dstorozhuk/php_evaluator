@@ -1,0 +1,237 @@
+<?php
+
+/**
+ * @file
+ * Additional filter for PHP input.
+ */
+
+function php_evaluator_perm() {
+  return array('eval php code');
+}
+
+function php_evaluator_menu(){
+  $items = array();
+  $items['admin/evaluate'] = array(
+    'title' => 'Execute PHP code',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('php_evaluator_form'),
+    'access arguments' => array('eval php code'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['evaluateajax'] = array(
+    'page callback' => 'php_evaluateajax',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('eval php code'),
+  );
+  return $items;
+    
+}
+/*
+function php_evaluator_init(){
+   _php_evaluator_get_css();
+   _php_evaluator_get_js();
+}
+*/
+function _php_evaluator_get_js()  {
+ 
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/codemirror.js');
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/clike.js');
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/css.js');
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/php.js');
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/xml.js');
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/javascript.js');
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirrorstart.js', 'module', 'footer');
+   
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/php_evaluator.js');  
+}
+
+function _php_evaluator_get_css()  {
+   drupal_add_css(drupal_get_path('module', 'php_evaluator').'/codemirror/css/codemirror.css');
+   drupal_add_css(drupal_get_path('module', 'php_evaluator').'/php_evaluator.css');
+}
+
+function php_evaluator_form(&$form_state){
+   _php_evaluator_get_css();
+   _php_evaluator_get_js();
+   
+   jquery_ui_add('ui.resizable');
+   drupal_add_js('
+   $(function() {
+    $("div#eval-output").css("minHeight", $("div#edit-code-wrapper").height());
+    $("div#edit-code-wrapper").resizable({
+        stop: function(event, ui) { 
+          //console.log($(this).width());
+          //console.log($(this).parent("fieldset").width());
+          var a = $(this).parent("fieldset").width();
+          var b = $(this).width();
+          $("div#eval-output").width((a - b) - 75 );
+        },
+        resize : function (event, ui) {
+          var a = $(this).parent("fieldset").width();
+          var b = $(this).width();
+          $("div#eval-output").width((a - b) - 75 );
+        },
+        maxWidth: $("div#edit-code-wrapper").parent("fieldset").width() - 75,
+        maxHeight: $("div#edit-code-wrapper").height(),
+        minWidth: 100,
+        minHeight: $("div#edit-code-wrapper").height()
+      }
+    );
+   });
+   
+   ', 'inline');
+   
+   $output = isset($form_state['values']['code']) ? drupal_eval($form_state['values']['code']) : "";
+   
+  if($form_state['clicked_button']['#id'] == "edit-reset1" || $form_state['clicked_button']['#id'] == "edit-reset2"){
+     $output = "";
+  }
+  $form['submit1'] = array(
+    '#type' => 'submit',
+    '#value' => t('Evaluate!'),
+    '#ahah' => array(
+      'path' => 'evaluateajax',
+      'wrapper' => 'eval-output',
+      'progress' => array(
+        'type' => 'trobler',
+        ),
+      //'effect' => 'fade'
+    ),
+   );
+  $form['reset1'] = array(
+    '#type' => 'submit',
+    '#value' => t('Reset'),
+    '#ahah' => array(
+      'path' => 'evaluateajax',
+      'wrapper' => 'eval-output',
+      'progress' => array(
+        'type' => 'trobler',
+        ),
+      //'effect' => 'fade'
+    ),
+   );
+  $form['eval'] = array(
+     '#type' => 'fieldset',
+     '#attributes' => array('class' => '')
+  );
+  $form['eval']['code'] = array(
+    '#type' => 'textarea',
+    '#default_value' => isset($form_state['values']['code']) ? $form_state['values']['code'] : "<?php\n",
+    '#resizable' => false,
+ 
+  );
+  if ($output) {
+    $form['eval']['output'] = array(
+     '#value' => $output
+    );
+  }
+  $form['eval']['wrapper'] = array(
+   '#value' => '<div id="eval-output"></div>'
+  );
+   $form['submit2'] = array(
+    '#type' => 'submit',
+    '#value' => t('Evaluate!'),
+    '#ahah' => array(
+      'path' => 'evaluateajax',
+      'wrapper' => 'eval-output',
+      'progress' => array(
+        'type' => 'trobler',
+        ),
+      //'effect' => 'fade'
+    ),
+   );
+  $form['reset2'] = array(
+    '#type' => 'submit',
+    '#value' => t('Reset'),
+    '#ahah' => array(
+      'path' => 'evaluateajax',
+      'wrapper' => 'eval-output',
+      'progress' => array(
+        'type' => 'trobler',
+        ),
+      //'effect' => 'fade'
+    ),
+   );
+
+   return $form;
+}
+
+/**
+ * The AHAH callback. It processes the form using partenaire_selection_callback_helper()
+ * and then
+ */
+
+function php_evaluateajax(){
+  
+  $form = php_evaluator_selection_callback_helper();
+  //drupal_process_form($form_id, &$form, &$form_state);
+  $changed_elements = $form['eval']['output']['#value'];
+  //$output = $form['code']['#value'];//drupal_eval($form['code']['#value']);
+  //$output = "text";
+  // Prevent duplicate wrappers.
+  //unset($changed_elements['#prefix'], $changed_elements['#suffix']);
+  //  drupal_debug($form);
+  //drupal_debug($_POST);
+  $output = theme('status_messages').$changed_elements;
+
+  drupal_json(array(
+    'status'   => TRUE,
+    'data'     => $output,
+  ));
+  
+}
+
+/**
+ * Default submit handler for form. This one happens when the main submit
+ * button is pressed.
+ */
+function php_evaluator_form_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Does the very standard things that must be done in any normal callback.
+ * Used by each callback in this example module.
+ */
+function php_evaluator_selection_callback_helper() {
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  // Enable the submit/validate handlers to determine whether AHAH-submittted.
+  $form_state['ahah_submission'] = TRUE;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  return  $form;
+}
+
+function php_evaluator_form_alter(&$form, &$form_state, $form_id)  {
+  
+  if ($form_id == 'php_evaluator_form') {
+    array_shift($form['#after_build']);
+    $form['#after_build'][] = 'php_evaluator_form_after_build';
+    //dpm($form);
+  }
+  
+}
+function php_evaluator_form_after_build($form, &$form_state) {
+  //dpm($form);
+  unset($form['eval']['code']['#suffix']);
+  return $form;
+}
+
+/**
+ * Реализация hook_block()
+ */
+
+function php_evaluator_preprocess_closure (&$vars) {
+  //print_r($vars);
+}
+
+function php_evaluator_preprocess_page (&$vars) {
+  //print_r($vars);
+}
+

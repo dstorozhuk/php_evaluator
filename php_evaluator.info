@@ -1,0 +1,6 @@
+name = PHP evaluator
+description = Allows evaluate PHP code/snippets.
+package = Development
+core = 6.x
+dependencies[]= jquery_ui
+
