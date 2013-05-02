@@ -1,3 +1,5 @@
+//@todo wrapp in to "behavior"
+
 var editor = CodeMirror.fromTextArea(document.getElementById("edit-code"), {
 lineNumbers: true,
 matchBrackets: true,
@@ -6,7 +8,7 @@ indentUnit: 2,
 indentWithTabs: true,
 enterMode: "keep",
 tabMode: "shift",
-onChange: function(){ 
+onChange: function(){
 		var editorValue = editor.getValue();
 		$('#edit-code').val(editorValue);
 		},
@@ -21,7 +23,7 @@ indentUnit: 2,
 indentWithTabs: true,
 enterMode: "keep",
 tabMode: "shift",
-onChange: function(){ 
+onChange: function(){
 		var editorValue = editor.getValue();
 		$('#edit-body').val(editorValue);
 		},
