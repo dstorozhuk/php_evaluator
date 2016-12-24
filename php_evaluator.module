@@ -26,12 +26,12 @@ function php_evaluator_menu(){
   return $items;
     
 }
-/*
-function php_evaluator_init(){
-   _php_evaluator_get_css();
-   _php_evaluator_get_js();
-}
-*/
+
+/**
+ * Helper function.
+ *
+ * Attach js.
+ */
 function _php_evaluator_get_js()  {
  
    drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/codemirror.js');
@@ -42,14 +42,22 @@ function _php_evaluator_get_js()  {
    drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirror/js/javascript.js');
    drupal_add_js(drupal_get_path('module', 'php_evaluator').'/codemirrorstart.js', 'module', 'footer');
    
-   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/php_evaluator.js');  
+   drupal_add_js(drupal_get_path('module', 'php_evaluator').'/php_evaluator.js');
 }
 
+/**
+ * Helper function.
+ *
+ * Attach css.
+ */
 function _php_evaluator_get_css()  {
    drupal_add_css(drupal_get_path('module', 'php_evaluator').'/codemirror/css/codemirror.css');
    drupal_add_css(drupal_get_path('module', 'php_evaluator').'/php_evaluator.css');
 }
 
+/**
+ * Page callback.
+ */
 function php_evaluator_form(&$form_state){
    _php_evaluator_get_css();
    _php_evaluator_get_js();
@@ -59,9 +67,7 @@ function php_evaluator_form(&$form_state){
    $(function() {
     $("div#eval-output").css("minHeight", $("div#edit-code-wrapper").height());
     $("div#edit-code-wrapper").resizable({
-        stop: function(event, ui) { 
-          //console.log($(this).width());
-          //console.log($(this).parent("fieldset").width());
+        stop: function(event, ui) {           
           var a = $(this).parent("fieldset").width();
           var b = $(this).width();
           $("div#eval-output").width((a - b) - 75 );
@@ -160,11 +166,9 @@ function php_evaluator_form(&$form_state){
  * The AHAH callback. It processes the form using partenaire_selection_callback_helper()
  * and then
  */
-
 function php_evaluateajax(){
-  
   $form = php_evaluator_selection_callback_helper();
-  //drupal_process_form($form_id, &$form, &$form_state);
+  
   $changed_elements = $form['eval']['output']['#value'];
   //$output = $form['code']['#value'];//drupal_eval($form['code']['#value']);
   //$output = "text";
@@ -208,30 +212,27 @@ function php_evaluator_selection_callback_helper() {
   return  $form;
 }
 
+
+/**
+ * Implements hook_form_alter().
+ */
 function php_evaluator_form_alter(&$form, &$form_state, $form_id)  {
-  
   if ($form_id == 'php_evaluator_form') {
     array_shift($form['#after_build']);
     $form['#after_build'][] = 'php_evaluator_form_after_build';
-    //dpm($form);
   }
   
 }
-function php_evaluator_form_after_build($form, &$form_state) {
-  //dpm($form);
-  unset($form['eval']['code']['#suffix']);
-  return $form;
-}
 
 /**
- * Реализация hook_block()
+ * After build form callback.
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
  */
-
-function php_evaluator_preprocess_closure (&$vars) {
-  //print_r($vars);
-}
-
-function php_evaluator_preprocess_page (&$vars) {
-  //print_r($vars);
+function php_evaluator_form_after_build($form, &$form_state) {
+  unset($form['eval']['code']['#suffix']);
+  return $form;
 }
 
