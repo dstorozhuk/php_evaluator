@@ -1,4 +1,4 @@
-php_evaluator for Drupal 6
+PHP evaluator for Drupal 6
 =============
 
 AJAX PHPcode evaluator for drupal site. Evaluate PHP code and return results via AJAX.
